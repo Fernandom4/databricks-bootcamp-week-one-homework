@@ -640,7 +640,15 @@
 
     document.getElementById("status-select").value = ticket.status;
     document.getElementById("status-select").addEventListener("change", (e) => updateStatus(ticket.ticket_id, e.target.value));
-    document.getElementById("message-form").addEventListener("submit", (e) => submitMessage(e, ticket.ticket_id));
+    
+    // Attach message form handler
+    const messageForm = document.getElementById("message-form");
+    if (messageForm) {
+      messageForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        await submitMessage(e, ticket.ticket_id);
+      });
+    }
 
     await loadMessages(ticket.ticket_id);
   }
@@ -687,9 +695,13 @@
   }
 
   async function submitMessage(e, ticketId) {
-    e.preventDefault();
     const textEl = document.getElementById("message-text");
     const authorEl = document.getElementById("message-author");
+
+    if (!textEl || !authorEl) {
+      showToast("Form elements not found", true);
+      return;
+    }
 
     if (!textEl.value.trim()) {
       showToast("Message cannot be empty", true);
@@ -701,23 +713,32 @@
       return;
     }
 
-    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const submitBtn = document.querySelector('#message-form button[type="submit"]');
+    if (!submitBtn) {
+      showToast("Submit button not found", true);
+      return;
+    }
+
     const originalBtnText = submitBtn.textContent;
     submitBtn.disabled = true;
     submitBtn.textContent = "Sending...";
 
     try {
-      await api(`/tickets/${ticketId}/messages`, {
+      const result = await api(`/tickets/${ticketId}/messages`, {
         method: "POST",
-        body: JSON.stringify({ message_text: textEl.value, author: authorEl.value }),
+        body: JSON.stringify({ message_text: textEl.value.trim(), author: authorEl.value.trim() }),
       });
-      // Clear only the message text, keep the author name
-      textEl.value = "";
-      textEl.focus();
-      await loadMessages(ticketId);
-      showToast("Message added");
+      
+      if (result) {
+        // Clear only the message text, keep the author name
+        textEl.value = "";
+        textEl.focus();
+        await loadMessages(ticketId);
+        showToast("Message added");
+      }
     } catch (err) {
-      showToast(err.message, true);
+      console.error('Message submission error:', err);
+      showToast(err.message || "Failed to send message", true);
     } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = originalBtnText;

@@ -84,7 +84,7 @@ def create_ticket(ticket: TicketCreate):
 
 
 @app.patch("/tickets/{ticket_id}/status")
-def update_ticket_status(ticket_id: str, update: StatusUpdate):
+def update_ticket_status(ticket_id: int, update: StatusUpdate):
     """Update a ticket's status."""
     affected = lakebase.run_write(
         "UPDATE tickets SET status = %s WHERE ticket_id = %s",
@@ -99,7 +99,7 @@ def update_ticket_status(ticket_id: str, update: StatusUpdate):
 
 
 @app.get("/tickets/{ticket_id}/messages")
-def list_messages(ticket_id: str):
+def list_messages(ticket_id: int):
     """View all messages for a given ticket."""
     ticket = lakebase.run_query(
         "SELECT ticket_id FROM tickets WHERE ticket_id = %s", (ticket_id,)
@@ -116,7 +116,7 @@ def list_messages(ticket_id: str):
 
 
 @app.post("/tickets/{ticket_id}/messages")
-def add_message(ticket_id: str, message: MessageCreate):
+def add_message(ticket_id: int, message: MessageCreate):
     """Add a message to an existing ticket."""
     ticket = lakebase.run_query(
         "SELECT ticket_id FROM tickets WHERE ticket_id = %s", (ticket_id,)

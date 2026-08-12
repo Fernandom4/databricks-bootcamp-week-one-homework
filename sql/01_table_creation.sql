@@ -15,19 +15,18 @@ The ticket_messages.ticket_id column must reference a ticket in the tickets tabl
 
 
 CREATE TABLE IF NOT EXISTS tickets(
-  ticket_id INTEGER,
-  title VARCHAR,
-  status VARCHAR,
-  created_by VARCHAR,
-  created_at TIMESTAMP  
-)
-;
+  ticket_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  title VARCHAR NOT NULL,
+  status VARCHAR NOT NULL DEFAULT 'open',
+  created_by VARCHAR NOT NULL,
+  created_at TIMESTAMP NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS ticket_messages(
-  message_id INTEGER,
-  ticket_id INTEGER,
-  message_text VARCHAR,
-  author VARCHAR,
-  created_at TIMESTAMP  
-)
-;
+  message_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  ticket_id INTEGER NOT NULL,
+  message_text VARCHAR NOT NULL,
+  author VARCHAR NOT NULL,
+  created_at TIMESTAMP NOT NULL,
+  FOREIGN KEY (ticket_id) REFERENCES tickets(ticket_id) ON DELETE CASCADE
+);

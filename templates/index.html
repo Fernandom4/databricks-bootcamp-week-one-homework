@@ -678,6 +678,8 @@
       if (t) t.status = status;
       renderCounts();
       renderTicketList();
+      // Refresh the detail panel to show updated status
+      await selectTicket(ticketId);
       showToast("Status updated");
     } catch (err) {
       showToast(err.message, true);
@@ -689,16 +691,36 @@
     const textEl = document.getElementById("message-text");
     const authorEl = document.getElementById("message-author");
 
+    if (!textEl.value.trim()) {
+      showToast("Message cannot be empty", true);
+      return;
+    }
+
+    if (!authorEl.value.trim()) {
+      showToast("Author name is required", true);
+      return;
+    }
+
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Sending...";
+
     try {
       await api(`/tickets/${ticketId}/messages`, {
         method: "POST",
         body: JSON.stringify({ message_text: textEl.value, author: authorEl.value }),
       });
+      // Clear only the message text, keep the author name
       textEl.value = "";
+      textEl.focus();
       await loadMessages(ticketId);
       showToast("Message added");
     } catch (err) {
       showToast(err.message, true);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalBtnText;
     }
   }
 
@@ -722,14 +744,26 @@
     e.preventDefault();
     const title = document.getElementById("nt-title").value;
     const created_by = document.getElementById("nt-author").value;
+    
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Creating...";
+    
     try {
-      await api("/tickets", { method: "POST", body: JSON.stringify({ title, created_by }) });
+      const newTicket = await api("/tickets", { method: "POST", body: JSON.stringify({ title, created_by }) });
       modalOverlay.classList.remove("visible");
       e.target.reset();
       await loadTickets();
+      // Auto-select the newly created ticket
+      if (newTicket && newTicket.ticket_id) {
+        await selectTicket(newTicket.ticket_id);
+      }
       showToast("Ticket created");
     } catch (err) {
       showToast(err.message, true);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Create ticket";
     }
   });
 
